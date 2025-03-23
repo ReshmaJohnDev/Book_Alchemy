@@ -3,8 +3,7 @@ import requests
 from datetime import datetime
 from flask import Flask, render_template,request, redirect, url_for, flash
 from data_models import db,Author, Book
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import session
+
 
 
 API_URL = 'https://www.googleapis.com/books/v1/volumes'
@@ -46,6 +45,7 @@ def home_page():
        else:
            books = Book.query.all()
 
+
     book_details = []
     for book in books:
         # Call the Google Books API using the ISBN for each book
@@ -62,18 +62,17 @@ def home_page():
             book_image_url = None
 
         book_details.append({
-            'title': book.book_title,
-            'author': book.author.author_name,
-            'publication_year': book.book_publication_year,
+            'book': book,
             'image_url': book_image_url
         })
+
+        print(book_details)
     return render_template('home.html', book_details= book_details, sort_by= sort_by, search_query=search_query)
 
 
 @app.route('/add_author', methods=['GET', 'POST'])
 def add_author():
     if request.method == 'POST':
-        authors = Author.query.all()
         author_name = request.form.get('author_name')
         author_birth_date= request.form.get('author_birth')
         author_death_date = request.form.get('author_death')
@@ -121,6 +120,26 @@ def add_book():
         return redirect(url_for('home_page'))
 
     return render_template('add_book.html',authors = authors )
+
+@app.route('/book/<int:book_id>/delete', methods=['GET', 'POST'])
+def delete_book(book_id):
+    if request.method == 'POST':
+        book = Book.query.get_or_404(book_id)
+        author = Author.query.get_or_404(book.author_id)
+        print(author)
+
+        db.session.delete(book)
+        db.session.commit()
+
+        remaining_books = Book.query.filter_by(author_id= author.author_id).all()
+        if not remaining_books:
+            db.session.delete(author)
+            db.session.commit()
+
+        flash('Book successfully deleted!', 'success')
+        return redirect(url_for('home_page'))
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)

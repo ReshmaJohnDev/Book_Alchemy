@@ -37,21 +37,27 @@
     <div class="input-field">
         <input type="text" name="search_query" placeholder="Search by title" required>
         <button type="submit">Search</button>
+         <a href="{{ url_for('home_page') }}">Back to Book List</a>
     </div>
-</form>
 
+</form>
     <ul>
-         {% for book in book_details %}
+         {% for detail in book_details %}
         <li>
-            <h2>{{ book.title }} ({{ book.publication_year }})</h2>
-            <p><strong>Author:</strong> {{ book.author}}</p>
+            <h2>{{ detail.book.book_title }} ({{ detail.book.book_publication_year }})</h2>
+            <p><strong>Author:</strong> {{ detail.book.author.author_name}}</p>
             <p>
-    {% if book.image_url %}
-        <img src="{{ book.image_url }}" alt="Book Cover" width="150">
+    {% if detail.image_url %}
+        <img src="{{ detail.image_url }}" alt="Book Cover" width="150">
     {% else %}
         No cover image available
     {% endif %}
     </p>
+            <form action="{{ url_for('delete_book', book_id= detail.book.book_id) }}" method="POST">
+                <div class="input-field">
+                    <button type="submit">Delete Book</button>
+                </div>
+            </form>
         </li>
         {% endfor %}
     </ul>
