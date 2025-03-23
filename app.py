@@ -5,8 +5,10 @@ from flask import Flask, render_template,request, redirect, url_for, flash
 from data_models import db,Author, Book
 
 
-
+#API to get book’s cover image
 API_URL = 'https://www.googleapis.com/books/v1/volumes'
+
+
 #Initializing the flask.
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Secure, random 24-byte key
@@ -25,9 +27,25 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
+def fetch_book_image(isbn):
+    isbn = isbn.replace('-', '')  # Remove hyphens for standardization
+    response = requests.get(f'{API_URL}?q=isbn:{isbn}')
+    if response.status_code == 200:
+        books_data = response.json().get('items', [])
+        if books_data:
+            book_info = books_data[0]['volumeInfo']
+            book_image_url = book_info.get('imageLinks', {}).get('thumbnail', None)
+            return book_image_url
+        else:
+            return  None
+
+
 
 @app.route('/',methods=['GET', 'POST'])
 def home_page():
+    """
+    Home page that allows users to search and sort books by title or author.
+    """
     search_query = ''
     sort_by = request.args.get('sort_by', None)
     books = []
@@ -36,8 +54,8 @@ def home_page():
         search_query = request.form.get('search_query', '')  # Get the search query from the form
         if search_query:
             books = Book.query.filter(Book.book_title.ilike(f'%{search_query}%')).all()
+    #For GET Request
     else:
-
        if sort_by == 'author':
             books = Book.query.join(Author).order_by(Author.author_name).all()
        elif sort_by == 'title':
@@ -45,33 +63,22 @@ def home_page():
        else:
            books = Book.query.all()
 
-
     book_details = []
     for book in books:
         # Call the Google Books API using the ISBN for each book
-        isbn = book.book_isbn.replace('-', '')
-        response = requests.get(f'{API_URL}?q=isbn:{isbn}')
-        if response.status_code == 200:
-            books_data = response.json().get('items', [])
-            if books_data:
-                book_info = books_data[0]['volumeInfo']
-                book_image_url = book_info.get('imageLinks', {}).get('thumbnail', None)
-            else:
-                book_image_url = None
-        else:
-            book_image_url = None
-
+        book_image_url = fetch_book_image(book.book_isbn)
         book_details.append({
             'book': book,
             'image_url': book_image_url
         })
-
-        print(book_details)
     return render_template('home.html', book_details= book_details, sort_by= sort_by, search_query=search_query)
 
 
 @app.route('/add_author', methods=['GET', 'POST'])
 def add_author():
+    """
+    Route for adding a new author.
+    """
     if request.method == 'POST':
         author_name = request.form.get('author_name')
         author_birth_date= request.form.get('author_birth')
@@ -81,7 +88,7 @@ def add_author():
         author_birth_date = datetime.strptime(author_birth_date, '%Y-%m-%d').date()
         death_date = None
         if author_death_date:
-            # If the death date is provided, convert it as well
+            # Convert the death date , if provided
             death_date = datetime.strptime(author_death_date, '%Y-%m-%d').date()
 
         new_author = Author(
@@ -96,10 +103,13 @@ def add_author():
         return redirect(url_for('home_page'))
 
     return render_template('add_author.html')
-#
-#
+
+
 @app.route('/add_book', methods=['GET', 'POST'])
 def add_book():
+    """
+    Route for adding a new Book.
+    """
     authors = Author.query.all()
     if request.method == 'POST':
         author_id = request.form.get('author_id')
@@ -121,13 +131,18 @@ def add_book():
 
     return render_template('add_book.html',authors = authors )
 
+
 @app.route('/book/<int:book_id>/delete', methods=['GET', 'POST'])
 def delete_book(book_id):
+    """
+     Routing that deletes a book from the homepage. If the book’s author doesn’t have any other books
+     in the  library, it deletes the author from your database.
+    """
     if request.method == 'POST':
         book = Book.query.get_or_404(book_id)
         author = Author.query.get_or_404(book.author_id)
         print(author)
-
+        # Delete the user selected book
         db.session.delete(book)
         db.session.commit()
 
@@ -140,8 +155,6 @@ def delete_book(book_id):
         return redirect(url_for('home_page'))
 
 
-
 if __name__ == '__main__':
     app.run(debug=True)
-
 
