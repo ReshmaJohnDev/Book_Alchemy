@@ -27,21 +27,26 @@ with app.app_context():
     db.create_all()
 
 
-@app.route('/')
+@app.route('/',methods=['GET', 'POST'])
 def home_page():
-
-    #Default criteria
+    search_query = ''
     sort_by = request.args.get('sort_by', None)
-    books_query = Book.query
-    if sort_by == 'author':
-        books_query = books_query.join(Author).order_by(Author.author_name)
-    elif sort_by == 'title':
-        books_query = books_query.join(Author).order_by(Book.book_title)
+    books = []
 
-    books = books_query.all()
+    if request.method == 'POST':
+        search_query = request.form.get('search_query', '')  # Get the search query from the form
+        if search_query:
+            books = Book.query.filter(Book.book_title.ilike(f'%{search_query}%')).all()
+    else:
+
+       if sort_by == 'author':
+            books = Book.query.join(Author).order_by(Author.author_name).all()
+       elif sort_by == 'title':
+            books = Book.query.order_by(Book.book_title).all()
+       else:
+           books = Book.query.all()
 
     book_details = []
-
     for book in books:
         # Call the Google Books API using the ISBN for each book
         isbn = book.book_isbn.replace('-', '')
@@ -62,7 +67,7 @@ def home_page():
             'publication_year': book.book_publication_year,
             'image_url': book_image_url
         })
-    return render_template('home.html', book_details= book_details, sort_by= sort_by)
+    return render_template('home.html', book_details= book_details, sort_by= sort_by, search_query=search_query)
 
 
 @app.route('/add_author', methods=['GET', 'POST'])
@@ -116,7 +121,6 @@ def add_book():
         return redirect(url_for('home_page'))
 
     return render_template('add_book.html',authors = authors )
-
 
 if __name__ == '__main__':
     app.run(debug=True)

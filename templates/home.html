@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <link rel="stylesheet" href="/static/styles.css">
     <title>Book Library</title>
 </head>
 <body>
@@ -31,6 +32,13 @@
 </nav>
 
     <h1>Books Library:</h1>
+<h2>Search Books</h2>
+<form action="{{ url_for('home_page') }}" method="POST">
+    <div class="input-field">
+        <input type="text" name="search_query" placeholder="Search by title" required>
+        <button type="submit">Search</button>
+    </div>
+</form>
 
     <ul>
          {% for book in book_details %}
