@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Your Info</title>
+</head>
+<body>
+    <h2>Add Author</h2>
+    <form method="POST" action="/add_author">
+        <label for="author_name">Author Name:</label><br>
+        <input type="text" id="author_name" name="author_name" required><br><br>
+
+        <label for="author_birth">Author Date OF Birth:</label><br>
+        <input type="date" id="author_birth" name="author_birth" required><br><br>
+
+        <label for="author_death">Author Date OF Death:</label><br>
+        <input type="date" id="author_death" name="author_death"><br><br>
+        <button type="submit">Add Author</button>
+    </form>
+<br>
+<a href="{{ url_for('home_page') }}">Back to Book List</a>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Library</title>
+</head>
+<body>
+<!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul>
+                {% for category, message in messages %}
+                    <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+<nav>
+    <a href="{{ url_for('home_page', sort_by='title') }}"
+       class="{% if sort_by == 'title' %}{% endif %}">
+        Sort by Title
+    </a> |
+    <a href="{{ url_for('home_page', sort_by='author') }}"
+       class="{% if sort_by == 'author' %}{% endif %}">
+        Sort by Author
+    </a> |
+    <a href="{{ url_for('add_author') }}">Add Author</a> |
+    <a href="{{ url_for('add_book') }}">Add Book</a>
+</nav>
+
+    <h1>Books Library:</h1>
+
+    <ul>
+         {% for book in book_details %}
+        <li>
+            <h2>{{ book.title }} ({{ book.publication_year }})</h2>
+            <p><strong>Author:</strong> {{ book.author}}</p>
+            <p>
+    {% if book.image_url %}
+        <img src="{{ book.image_url }}" alt="Book Cover" width="150">
+    {% else %}
+        No cover image available
+    {% endif %}
+    </p>
+        </li>
+        {% endfor %}
+    </ul>
+
+</body>
+</html>
